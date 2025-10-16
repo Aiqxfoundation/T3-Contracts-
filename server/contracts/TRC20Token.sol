@@ -11,14 +11,23 @@ contract TRC20Token {
     mapping(address => mapping(address => uint256)) public allowance;
     
     address public owner;
+    bool public paused;
     
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event Mint(address indexed to, uint256 value);
     event Burn(address indexed from, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event Paused(address account);
+    event Unpaused(address account);
     
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this function");
+        _;
+    }
+    
+    modifier whenNotPaused() {
+        require(!paused, "Token transfers are paused");
         _;
     }
     
@@ -37,7 +46,7 @@ contract TRC20Token {
         emit Transfer(address(0), msg.sender, totalSupply);
     }
     
-    function transfer(address _to, uint256 _value) public returns (bool success) {
+    function transfer(address _to, uint256 _value) public whenNotPaused returns (bool success) {
         require(_to != address(0), "Invalid recipient address");
         require(balanceOf[msg.sender] >= _value, "Insufficient balance");
         
@@ -74,7 +83,7 @@ contract TRC20Token {
         return true;
     }
     
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
+    function transferFrom(address _from, address _to, uint256 _value) public whenNotPaused returns (bool success) {
         require(_to != address(0), "Invalid recipient address");
         require(balanceOf[_from] >= _value, "Insufficient balance");
         require(allowance[_from][msg.sender] >= _value, "Allowance exceeded");
@@ -107,5 +116,40 @@ contract TRC20Token {
         emit Burn(owner, amount);
         emit Transfer(owner, address(0), amount);
         return true;
+    }
+    
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     * CRITICAL: Double-check the new owner address before calling this function.
+     * Once transferred, the previous owner will lose all admin privileges.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        require(newOwner != address(0), "New owner cannot be zero address");
+        require(newOwner != owner, "New owner must be different from current owner");
+        
+        address previousOwner = owner;
+        owner = newOwner;
+        
+        emit OwnershipTransferred(previousOwner, newOwner);
+    }
+    
+    /**
+     * @dev Pauses all token transfers. Can only be called by the owner.
+     * Use this in case of emergency to prevent all transfers.
+     */
+    function pause() public onlyOwner {
+        require(!paused, "Contract is already paused");
+        paused = true;
+        emit Paused(msg.sender);
+    }
+    
+    /**
+     * @dev Unpauses token transfers. Can only be called by the owner.
+     */
+    function unpause() public onlyOwner {
+        require(paused, "Contract is not paused");
+        paused = false;
+        emit Unpaused(msg.sender);
     }
 }
