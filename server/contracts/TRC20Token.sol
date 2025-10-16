@@ -7,6 +7,10 @@ contract TRC20Token {
     uint8 public decimals;
     uint256 public totalSupply;
     
+    string public logoURI;
+    string public website;
+    string public description;
+    
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
     
@@ -35,11 +39,17 @@ contract TRC20Token {
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
-        uint256 _initialSupply
+        uint256 _initialSupply,
+        string memory _logoURI,
+        string memory _website,
+        string memory _description
     ) {
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
+        logoURI = _logoURI;
+        website = _website;
+        description = _description;
         owner = msg.sender;
         totalSupply = _initialSupply * 10 ** uint256(_decimals);
         balanceOf[msg.sender] = totalSupply;
@@ -151,5 +161,26 @@ contract TRC20Token {
         require(paused, "Contract is not paused");
         paused = false;
         emit Unpaused(msg.sender);
+    }
+    
+    /**
+     * @dev Update token logo URI. Can only be called by the owner.
+     */
+    function setLogoURI(string memory newLogoURI) public onlyOwner {
+        logoURI = newLogoURI;
+    }
+    
+    /**
+     * @dev Update token website. Can only be called by the owner.
+     */
+    function setWebsite(string memory newWebsite) public onlyOwner {
+        website = newWebsite;
+    }
+    
+    /**
+     * @dev Update token description. Can only be called by the owner.
+     */
+    function setDescription(string memory newDescription) public onlyOwner {
+        description = newDescription;
     }
 }
