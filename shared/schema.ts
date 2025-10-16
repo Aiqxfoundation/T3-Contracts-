@@ -12,6 +12,9 @@ export const tokens = pgTable("tokens", {
   totalSupply: text("total_supply").notNull(),
   deployerAddress: text("deployer_address").notNull(),
   network: text("network").notNull(), // 'testnet' or 'mainnet'
+  logoURI: text("logo_uri"),
+  website: text("website"),
+  description: text("description"),
   deployedAt: timestamp("deployed_at").notNull(),
 });
 
@@ -63,6 +66,9 @@ export const deployTokenSchema = z.object({
   symbol: z.string().min(1, "Token symbol is required").max(10).toUpperCase(),
   decimals: z.number().int().min(0).max(18).default(6),
   initialSupply: z.string().min(1, "Initial supply is required"),
+  logoURI: z.string().url("Invalid logo URL").optional().or(z.literal("")),
+  website: z.string().url("Invalid website URL").optional().or(z.literal("")),
+  description: z.string().max(500, "Description too long").optional().or(z.literal("")),
 });
 
 export type DeployTokenParams = z.infer<typeof deployTokenSchema>;
