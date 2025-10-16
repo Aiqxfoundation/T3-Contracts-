@@ -61,6 +61,16 @@ This tool provides a comprehensive interface for TRON token development and mana
   - Confirmation dialog for mainnet operations
   - Network-specific data persistence
 
+- **Enhanced Token Deployment**
+  - **Token Metadata Support** (NEW!)
+    - Logo URL (direct link or IPFS)
+    - Website URL
+    - Project description
+  - Standard TRC-20 parameters (name, symbol, decimals, supply)
+  - Real-time form preview
+  - Blockchain fee estimation
+  - Metadata stored on-chain in smart contract
+
 - **User Interface**
   - Beautiful dark-themed blockchain UI
   - Responsive design for all screen sizes
@@ -70,7 +80,7 @@ This tool provides a comprehensive interface for TRON token development and mana
   - Transaction history table
 
 - **Data Management**
-  - Token list with contract details
+  - Token list with contract details and metadata
   - Transaction tracking
   - Network-specific storage
   - Balance queries
