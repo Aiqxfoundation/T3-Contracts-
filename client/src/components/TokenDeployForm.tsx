@@ -50,6 +50,9 @@ export function TokenDeployForm({ onDeploy, isDeploying, network, trxBalance }: 
       symbol: "",
       decimals: 6,
       initialSupply: "",
+      logoURI: "",
+      website: "",
+      description: "",
     },
   });
 
@@ -211,6 +214,66 @@ export function TokenDeployForm({ onDeploy, isDeploying, network, trxBalance }: 
                 />
               </div>
 
+              <div className="border-t pt-4 mt-4">
+                <h3 className="text-sm font-semibold mb-3">Token Metadata (Optional)</h3>
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="logoURI"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Logo URL</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://example.com/logo.png or ipfs://..."
+                            {...field}
+                            data-testid="input-logo-uri"
+                          />
+                        </FormControl>
+                        <FormDescription>Direct URL or IPFS link to your token logo</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="website"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Website</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://yourproject.com"
+                            {...field}
+                            data-testid="input-website"
+                          />
+                        </FormControl>
+                        <FormDescription>Official project website</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Description</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="A brief description of your token..."
+                            {...field}
+                            data-testid="input-description"
+                          />
+                        </FormControl>
+                        <FormDescription>Describe your token project (max 500 characters)</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
+
               <Button
                 type="submit"
                 className="w-full"
@@ -259,12 +322,41 @@ export function TokenDeployForm({ onDeploy, isDeploying, network, trxBalance }: 
                 {formValues.decimals}
               </span>
             </div>
-            <div className="flex justify-between items-center py-2">
+            <div className="flex justify-between items-center py-2 border-b">
               <span className="text-sm text-muted-foreground">Initial Supply</span>
               <span className="font-medium" data-testid="text-preview-supply">
                 {formValues.initialSupply ? parseFloat(formValues.initialSupply).toLocaleString() : "—"}
               </span>
             </div>
+            {(formValues.logoURI || formValues.website || formValues.description) && (
+              <div className="pt-3 mt-3 border-t">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">Metadata</p>
+                {formValues.logoURI && (
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-xs text-muted-foreground">Logo</span>
+                    <span className="text-xs font-mono truncate max-w-[200px]" data-testid="text-preview-logo">
+                      {formValues.logoURI}
+                    </span>
+                  </div>
+                )}
+                {formValues.website && (
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-xs text-muted-foreground">Website</span>
+                    <span className="text-xs truncate max-w-[200px]" data-testid="text-preview-website">
+                      {formValues.website}
+                    </span>
+                  </div>
+                )}
+                {formValues.description && (
+                  <div className="py-1">
+                    <span className="text-xs text-muted-foreground">Description</span>
+                    <p className="text-xs mt-1" data-testid="text-preview-description">
+                      {formValues.description}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {formValues.name && formValues.symbol && formValues.initialSupply && (
@@ -312,6 +404,28 @@ export function TokenDeployForm({ onDeploy, isDeploying, network, trxBalance }: 
                     <span className="text-muted-foreground">Supply:</span>
                     <span className="font-medium">{parseFloat(pendingDeployData.initialSupply).toLocaleString()}</span>
                   </div>
+                  {(pendingDeployData.logoURI || pendingDeployData.website || pendingDeployData.description) && (
+                    <div className="pt-2 mt-2 border-t">
+                      {pendingDeployData.logoURI && (
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">Logo:</span>
+                          <span className="font-mono truncate max-w-[200px]">{pendingDeployData.logoURI}</span>
+                        </div>
+                      )}
+                      {pendingDeployData.website && (
+                        <div className="flex justify-between text-xs mt-1">
+                          <span className="text-muted-foreground">Website:</span>
+                          <span className="truncate max-w-[200px]">{pendingDeployData.website}</span>
+                        </div>
+                      )}
+                      {pendingDeployData.description && (
+                        <div className="text-xs mt-1">
+                          <span className="text-muted-foreground">Description:</span>
+                          <p className="mt-0.5">{pendingDeployData.description}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
