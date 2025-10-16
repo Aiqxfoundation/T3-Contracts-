@@ -122,6 +122,11 @@ export class MemStorage implements IStorage {
       ...insertTransaction,
       id,
       timestamp: new Date(),
+      fromAddress: insertTransaction.fromAddress ?? null,
+      toAddress: insertTransaction.toAddress ?? null,
+      amount: insertTransaction.amount ?? null,
+      tokenAddress: insertTransaction.tokenAddress ?? null,
+      error: insertTransaction.error ?? null,
     };
     this.transactions.set(id, transaction);
     return transaction;
