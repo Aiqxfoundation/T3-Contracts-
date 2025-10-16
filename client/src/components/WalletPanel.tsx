@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -12,19 +13,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Wallet, Copy, Check, Eye, EyeOff, Plus, LogOut } from "lucide-react";
+import { Wallet, Copy, Check, Eye, EyeOff, Plus, LogOut, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { WalletConfig } from "@shared/schema";
+import { WalletConfig, Network } from "@shared/schema";
 
 interface WalletPanelProps {
   wallet: WalletConfig | null;
   onCreateWallet: () => void;
   onImportWallet: (privateKey: string) => void;
   onDisconnect: () => void;
+  onRefreshBalance?: () => void;
   trxBalance?: string;
+  network: Network;
+  isLoadingBalance?: boolean;
 }
 
-export function WalletPanel({ wallet, onCreateWallet, onImportWallet, onDisconnect, trxBalance }: WalletPanelProps) {
+export function WalletPanel({ wallet, onCreateWallet, onImportWallet, onDisconnect, onRefreshBalance, trxBalance, network, isLoadingBalance }: WalletPanelProps) {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [privateKey, setPrivateKey] = useState("");
   const [showPrivateKey, setShowPrivateKey] = useState(false);
@@ -140,7 +144,15 @@ export function WalletPanel({ wallet, onCreateWallet, onImportWallet, onDisconne
             <Wallet className="w-5 h-5" />
             Wallet
           </div>
-          <Badge variant="secondary" className="text-xs">Connected</Badge>
+          <div className="flex items-center gap-2">
+            <Badge 
+              variant={network === 'mainnet' ? 'destructive' : 'default'} 
+              className="text-xs"
+            >
+              {network === 'mainnet' ? 'MAINNET' : 'TESTNET'}
+            </Badge>
+            <Badge variant="secondary" className="text-xs">Connected</Badge>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -163,16 +175,53 @@ export function WalletPanel({ wallet, onCreateWallet, onImportWallet, onDisconne
           </div>
         </div>
 
-        {trxBalance !== undefined && (
-          <div className="space-y-2">
+        <Separator />
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground uppercase tracking-wide">
-              TRX Balance
+              TRX Balance {network === 'mainnet' && '(REAL MONEY)'}
             </Label>
-            <div className="text-2xl font-semibold" data-testid="text-trx-balance">
-              {parseFloat(trxBalance).toLocaleString()} TRX
-            </div>
+            {onRefreshBalance && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={onRefreshBalance}
+                disabled={isLoadingBalance}
+                data-testid="button-refresh-balance"
+              >
+                <RefreshCw className={`w-3 h-3 ${isLoadingBalance ? 'animate-spin' : ''}`} />
+              </Button>
+            )}
           </div>
-        )}
+          <div className="p-4 bg-primary/5 rounded-lg border-2 border-primary/20">
+            <div className="text-3xl font-bold tracking-tight" data-testid="text-trx-balance">
+              {isLoadingBalance ? (
+                <span className="text-muted-foreground">Loading...</span>
+              ) : trxBalance !== undefined ? (
+                <>
+                  {parseFloat(trxBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })}
+                  <span className="text-lg ml-2 text-muted-foreground">TRX</span>
+                </>
+              ) : (
+                <span className="text-muted-foreground text-lg">Unable to fetch</span>
+              )}
+            </div>
+            {network === 'mainnet' && trxBalance !== undefined && parseFloat(trxBalance) > 0 && (
+              <div className="text-xs text-muted-foreground mt-2">
+                ≈ ${(parseFloat(trxBalance) * 0.25).toFixed(2)} USD (estimate)
+              </div>
+            )}
+          </div>
+          {network === 'testnet' && parseFloat(trxBalance || '0') === 0 && (
+            <p className="text-xs text-muted-foreground mt-2">
+              💡 Get free testnet TRX from the <a href="https://nileex.io/join/getJoinPage" target="_blank" rel="noopener noreferrer" className="text-primary underline">Nile Faucet</a>
+            </p>
+          )}
+        </div>
+
+        <Separator />
 
         <Button
           variant="outline"

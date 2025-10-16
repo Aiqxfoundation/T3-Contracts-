@@ -28,7 +28,7 @@ export default function Dashboard({ wallet, network, onCreateWallet, onImportWal
     enabled: !!wallet,
   });
 
-  const { data: balance } = useQuery<{ trxBalance: string }>({
+  const { data: balance, isLoading: isLoadingBalance, refetch: refetchBalance } = useQuery<{ trxBalance: string }>({
     queryKey: ['/api/wallet/balance', network],
     enabled: !!wallet,
     refetchInterval: 30000, // Auto-refresh every 30 seconds
@@ -36,6 +36,10 @@ export default function Dashboard({ wallet, network, onCreateWallet, onImportWal
 
   const handleSelectToken = (token: Token) => {
     setLocation(`/manage?token=${token.id}`);
+  };
+
+  const handleRefreshBalance = () => {
+    refetchBalance();
   };
 
   return (
@@ -53,7 +57,10 @@ export default function Dashboard({ wallet, network, onCreateWallet, onImportWal
           onCreateWallet={onCreateWallet}
           onImportWallet={onImportWallet}
           onDisconnect={onDisconnect}
+          onRefreshBalance={handleRefreshBalance}
           trxBalance={balance?.trxBalance}
+          network={network}
+          isLoadingBalance={isLoadingBalance}
         />
 
         <Card>

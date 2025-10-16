@@ -49,8 +49,28 @@ contract TRC20Token {
     }
     
     function approve(address _spender, uint256 _value) public returns (bool success) {
+        require(_spender != address(0), "Invalid spender address");
+        // To prevent approval front-running, require allowance to be 0 before setting new value
+        // Or use increaseAllowance/decreaseAllowance functions
+        require(allowance[msg.sender][_spender] == 0 || _value == 0, 
+            "Approve from non-zero to non-zero allowance not allowed. Use increaseAllowance or decreaseAllowance");
         allowance[msg.sender][_spender] = _value;
         emit Approval(msg.sender, _spender, _value);
+        return true;
+    }
+    
+    function increaseAllowance(address _spender, uint256 _addedValue) public returns (bool success) {
+        require(_spender != address(0), "Invalid spender address");
+        allowance[msg.sender][_spender] += _addedValue;
+        emit Approval(msg.sender, _spender, allowance[msg.sender][_spender]);
+        return true;
+    }
+    
+    function decreaseAllowance(address _spender, uint256 _subtractedValue) public returns (bool success) {
+        require(_spender != address(0), "Invalid spender address");
+        require(allowance[msg.sender][_spender] >= _subtractedValue, "Decreased allowance below zero");
+        allowance[msg.sender][_spender] -= _subtractedValue;
+        emit Approval(msg.sender, _spender, allowance[msg.sender][_spender]);
         return true;
     }
     

@@ -457,6 +457,20 @@ export class TronService {
         "type": "function"
       },
       {
+        "inputs": [{"internalType": "address", "name": "_spender", "type": "address"}, {"internalType": "uint256", "name": "_addedValue", "type": "uint256"}],
+        "name": "increaseAllowance",
+        "outputs": [{"internalType": "bool", "name": "success", "type": "bool"}],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
+        "inputs": [{"internalType": "address", "name": "_spender", "type": "address"}, {"internalType": "uint256", "name": "_subtractedValue", "type": "uint256"}],
+        "name": "decreaseAllowance",
+        "outputs": [{"internalType": "bool", "name": "success", "type": "bool"}],
+        "stateMutability": "nonpayable",
+        "type": "function"
+      },
+      {
         "inputs": [{"internalType": "address", "name": "", "type": "address"}],
         "name": "balanceOf",
         "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
