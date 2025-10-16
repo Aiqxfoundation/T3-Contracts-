@@ -252,6 +252,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalSupply: params.initialSupply,
           deployerAddress: wallet.address,
           network,
+          logoURI: params.logoURI || null,
+          website: params.website || null,
+          description: params.description || null,
         });
 
         res.json({

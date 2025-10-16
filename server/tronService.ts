@@ -116,6 +116,9 @@ export class TronService {
           params.symbol,
           params.decimals,
           params.initialSupply,
+          params.logoURI || "",
+          params.website || "",
+          params.description || "",
         ],
         feeLimit: 1000000000,
         callValue: 0,
@@ -413,7 +416,10 @@ export class TronService {
           {"internalType": "string", "name": "_name", "type": "string"},
           {"internalType": "string", "name": "_symbol", "type": "string"},
           {"internalType": "uint8", "name": "_decimals", "type": "uint8"},
-          {"internalType": "uint256", "name": "_initialSupply", "type": "uint256"}
+          {"internalType": "uint256", "name": "_initialSupply", "type": "uint256"},
+          {"internalType": "string", "name": "_logoURI", "type": "string"},
+          {"internalType": "string", "name": "_website", "type": "string"},
+          {"internalType": "string", "name": "_description", "type": "string"}
         ],
         "stateMutability": "nonpayable",
         "type": "constructor"
@@ -540,6 +546,27 @@ export class TronService {
         "inputs": [],
         "name": "totalSupply",
         "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "logoURI",
+        "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "website",
+        "outputs": [{"internalType": "string", "name": "", "type": "string"}],
+        "stateMutability": "view",
+        "type": "function"
+      },
+      {
+        "inputs": [],
+        "name": "description",
+        "outputs": [{"internalType": "string", "name": "", "type": "string"}],
         "stateMutability": "view",
         "type": "function"
       },
