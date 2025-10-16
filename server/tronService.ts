@@ -20,6 +20,9 @@ const TRON_NETWORKS = {
   },
 };
 
+// Get TronGrid API key from environment (optional but recommended for better rate limits)
+const TRONGRID_API_KEY = process.env.TRONGRID_API_KEY || '';
+
 export class TronService {
   private tronWeb: any;
   private network: Network;
@@ -34,15 +37,21 @@ export class TronService {
   private initializeTronWeb() {
     const config = TRON_NETWORKS[this.network];
     
+    const tronWebConfig: any = {
+      fullHost: config.fullHost,
+      headers: TRONGRID_API_KEY ? { 'TRON-PRO-API-KEY': TRONGRID_API_KEY } : {},
+    };
+    
     if (this.privateKey) {
-      this.tronWeb = new TronWeb({
-        fullHost: config.fullHost,
-        privateKey: this.privateKey,
-      });
+      tronWebConfig.privateKey = this.privateKey;
+    }
+    
+    this.tronWeb = new TronWeb(tronWebConfig);
+    
+    if (TRONGRID_API_KEY) {
+      console.log(`[TronService] Initialized with TronGrid API key for ${this.network}`);
     } else {
-      this.tronWeb = new TronWeb({
-        fullHost: config.fullHost,
-      });
+      console.log(`[TronService] Initialized without API key for ${this.network} (rate limits may apply)`);
     }
   }
 
