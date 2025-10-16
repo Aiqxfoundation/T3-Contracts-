@@ -76,11 +76,19 @@ export class TronService {
 
   async getBalance(address: string): Promise<string> {
     try {
+      console.log(`[TronService] Fetching balance for address: ${address} on ${this.network}`);
       const balance = await this.tronWeb.trx.getBalance(address);
-      return this.tronWeb.fromSun(balance);
-    } catch (error) {
-      console.error('Error getting balance:', error);
-      return '0';
+      const balanceInTrx = this.tronWeb.fromSun(balance);
+      console.log(`[TronService] Balance fetched successfully: ${balanceInTrx} TRX`);
+      return balanceInTrx;
+    } catch (error: any) {
+      console.error(`[TronService] Error getting balance for ${address} on ${this.network}:`, {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      // Re-throw the error so the route can handle it properly
+      throw new Error(`Failed to fetch balance from ${this.network}: ${error.message}`);
     }
   }
 

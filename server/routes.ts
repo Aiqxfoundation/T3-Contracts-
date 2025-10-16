@@ -136,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/wallet/balance", async (req, res) => {
+  app.get("/api/wallet/balance/:network?", async (req, res) => {
     try {
       const wallet = await storage.getWallet();
       
@@ -148,12 +148,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ trxBalance });
     } catch (error: any) {
+      console.error('Balance endpoint error:', error);
       res.status(500).json({ message: error.message });
     }
   });
 
   // Token endpoints
-  app.get("/api/tokens", async (req, res) => {
+  app.get("/api/tokens/:network?", async (req, res) => {
     try {
       const network = await storage.getCurrentNetwork();
       const tokens = await storage.getTokens(network);
@@ -519,7 +520,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transaction endpoints
-  app.get("/api/transactions", async (req, res) => {
+  app.get("/api/transactions/:network?", async (req, res) => {
     try {
       const network = await storage.getCurrentNetwork();
       const transactions = await storage.getTransactions(network, 50);
