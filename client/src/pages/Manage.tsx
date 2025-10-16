@@ -145,6 +145,7 @@ export default function Manage({ wallet, network }: ManageProps) {
           onBurn={(params) => burnMutation.mutate(params)}
           onBack={() => setSelectedToken(null)}
           isProcessing={isProcessing}
+          network={network}
         />
       ) : (
         <TokenList

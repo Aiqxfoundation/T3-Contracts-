@@ -1,9 +1,11 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { deployTokenSchema, type DeployTokenParams } from "@shared/schema";
+import { useState, useEffect } from "react";
+import { deployTokenSchema, type DeployTokenParams, type Network } from "@shared/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Form,
   FormControl,
@@ -13,14 +15,24 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Rocket, Loader2 } from "lucide-react";
+import { Rocket, Loader2, AlertTriangle, DollarSign } from "lucide-react";
 
 interface TokenDeployFormProps {
   onDeploy: (params: DeployTokenParams) => void;
   isDeploying: boolean;
+  network: Network;
+  trxBalance?: string;
 }
 
-export function TokenDeployForm({ onDeploy, isDeploying }: TokenDeployFormProps) {
+export function TokenDeployForm({ onDeploy, isDeploying, network, trxBalance }: TokenDeployFormProps) {
+  const [feeEstimate, setFeeEstimate] = useState<{
+    energyRequired: number;
+    bandwidthRequired: number;
+    estimatedTrxCost: string;
+    estimatedUsdCost: string;
+  } | null>(null);
+  const [isEstimating, setIsEstimating] = useState(false);
+
   const form = useForm<DeployTokenParams>({
     resolver: zodResolver(deployTokenSchema),
     defaultValues: {
@@ -37,6 +49,40 @@ export function TokenDeployForm({ onDeploy, isDeploying }: TokenDeployFormProps)
 
   const formValues = form.watch();
 
+  // Fetch fee estimate when form values change
+  useEffect(() => {
+    const fetchFeeEstimate = async () => {
+      if (formValues.name && formValues.symbol && formValues.initialSupply) {
+        setIsEstimating(true);
+        try {
+          const response = await fetch('/api/tokens/estimate-fee', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formValues),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            setFeeEstimate(data);
+          }
+        } catch (error) {
+          console.error('Failed to estimate fee:', error);
+        } finally {
+          setIsEstimating(false);
+        }
+      } else {
+        setFeeEstimate(null);
+      }
+    };
+
+    const debounce = setTimeout(fetchFeeEstimate, 500);
+    return () => clearTimeout(debounce);
+  }, [formValues.name, formValues.symbol, formValues.decimals, formValues.initialSupply]);
+
+  const hasSufficientBalance = () => {
+    if (!trxBalance || !feeEstimate) return true;
+    return parseFloat(trxBalance) >= parseFloat(feeEstimate.estimatedTrxCost);
+  };
+
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Card>
@@ -46,10 +92,18 @@ export function TokenDeployForm({ onDeploy, isDeploying }: TokenDeployFormProps)
             Deploy New Token
           </CardTitle>
           <CardDescription>
-            Create and deploy a new TRC-20 token to the blockchain
+            Create and deploy a new TRC-20 token to the {network === 'mainnet' ? 'Mainnet' : 'Testnet'}
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {network === 'mainnet' && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Warning:</strong> You are deploying to MAINNET. This will use real TRX and cannot be undone. Double-check all parameters before proceeding.
+              </AlertDescription>
+            </Alert>
+          )}
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
@@ -132,10 +186,19 @@ export function TokenDeployForm({ onDeploy, isDeploying }: TokenDeployFormProps)
                 />
               </div>
 
+              {feeEstimate && !hasSufficientBalance() && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    Insufficient balance. You need {feeEstimate.estimatedTrxCost} TRX but have {trxBalance || '0'} TRX.
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <Button
                 type="submit"
                 className="w-full"
-                disabled={isDeploying}
+                disabled={isDeploying || !hasSufficientBalance()}
                 data-testid="button-deploy-token"
               >
                 {isDeploying ? (
@@ -187,6 +250,46 @@ export function TokenDeployForm({ onDeploy, isDeploying }: TokenDeployFormProps)
               </span>
             </div>
           </div>
+
+          {feeEstimate && (
+            <div className="mt-6 p-4 bg-muted rounded-lg space-y-3">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="w-4 h-4 text-muted-foreground" />
+                <p className="text-sm font-semibold">Estimated Deployment Cost</p>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Energy Required:</span>
+                  <span className="font-medium">{feeEstimate.energyRequired.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Bandwidth Required:</span>
+                  <span className="font-medium">{feeEstimate.bandwidthRequired.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between border-t pt-2">
+                  <span className="text-muted-foreground">Estimated TRX Cost:</span>
+                  <span className="font-bold text-lg">{feeEstimate.estimatedTrxCost} TRX</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Estimated USD Cost:</span>
+                  <span className="font-medium">${feeEstimate.estimatedUsdCost}</span>
+                </div>
+              </div>
+              {trxBalance && (
+                <div className={`flex justify-between pt-2 border-t ${hasSufficientBalance() ? 'text-chart-2' : 'text-destructive'}`}>
+                  <span className="text-sm">Your TRX Balance:</span>
+                  <span className="font-semibold">{parseFloat(trxBalance).toFixed(2)} TRX</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {isEstimating && (
+            <div className="mt-6 p-4 bg-muted rounded-lg flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm text-muted-foreground">Calculating deployment cost...</span>
+            </div>
+          )}
 
           {formValues.name && formValues.symbol && formValues.initialSupply && (
             <div className="mt-6 p-4 bg-muted rounded-lg">

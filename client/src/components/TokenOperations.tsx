@@ -9,11 +9,13 @@ import {
   type MintTokenParams,
   type BurnTokenParams,
   type Token,
+  type Network,
 } from "@shared/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Form,
   FormControl,
@@ -23,7 +25,7 @@ import {
   FormMessage,
   FormDescription,
 } from "@/components/ui/form";
-import { Send, Plus, Flame, Loader2, ArrowLeft } from "lucide-react";
+import { Send, Plus, Flame, Loader2, ArrowLeft, AlertTriangle } from "lucide-react";
 
 interface TokenOperationsProps {
   token: Token;
@@ -32,9 +34,10 @@ interface TokenOperationsProps {
   onBurn: (params: BurnTokenParams) => void;
   onBack: () => void;
   isProcessing: boolean;
+  network: Network;
 }
 
-export function TokenOperations({ token, onTransfer, onMint, onBurn, onBack, isProcessing }: TokenOperationsProps) {
+export function TokenOperations({ token, onTransfer, onMint, onBurn, onBack, isProcessing, network }: TokenOperationsProps) {
   const [activeTab, setActiveTab] = useState("transfer");
 
   const transferForm = useForm<TransferTokenParams>({
@@ -102,9 +105,22 @@ export function TokenOperations({ token, onTransfer, onMint, onBurn, onBack, isP
               </CardDescription>
             </div>
           </div>
-          <div className="mt-4 p-3 bg-muted rounded-lg">
-            <p className="text-xs text-muted-foreground mb-1">Contract Address</p>
-            <code className="text-sm font-mono">{token.contractAddress}</code>
+          <div className="mt-4 space-y-3">
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-xs text-muted-foreground mb-1">Contract Address</p>
+              <code className="text-sm font-mono break-all">{token.contractAddress}</code>
+            </div>
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-xs text-muted-foreground mb-1">Token Owner (Authority)</p>
+              <code className="text-sm font-mono break-all">{token.deployerAddress}</code>
+              <p className="text-xs text-muted-foreground mt-2">
+                Only the owner can mint and burn tokens
+              </p>
+            </div>
+            <div className="p-3 bg-muted rounded-lg">
+              <p className="text-xs text-muted-foreground mb-1">Total Supply</p>
+              <p className="text-lg font-semibold">{parseFloat(token.totalSupply).toLocaleString()} {token.symbol}</p>
+            </div>
           </div>
         </CardHeader>
       </Card>
@@ -132,6 +148,14 @@ export function TokenOperations({ token, onTransfer, onMint, onBurn, onBack, isP
               <CardDescription>Send tokens to another address</CardDescription>
             </CardHeader>
             <CardContent>
+              {network === 'mainnet' && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>MAINNET Warning:</strong> This operation uses real TRX for fees and cannot be undone. Verify the recipient address carefully.
+                  </AlertDescription>
+                </Alert>
+              )}
               <Form {...transferForm}>
                 <form onSubmit={transferForm.handleSubmit(onTransfer)} className="space-y-4">
                   <FormField
@@ -196,6 +220,14 @@ export function TokenOperations({ token, onTransfer, onMint, onBurn, onBack, isP
               <CardDescription>Create new tokens and add to total supply</CardDescription>
             </CardHeader>
             <CardContent>
+              {network === 'mainnet' && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>MAINNET Warning:</strong> This operation uses real TRX for fees and permanently increases token supply.
+                  </AlertDescription>
+                </Alert>
+              )}
               <Form {...mintForm}>
                 <form onSubmit={mintForm.handleSubmit(onMint)} className="space-y-4">
                   <FormField
@@ -244,6 +276,14 @@ export function TokenOperations({ token, onTransfer, onMint, onBurn, onBack, isP
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {network === 'mainnet' && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>MAINNET Warning:</strong> This operation uses real TRX for fees and permanently destroys tokens. This action CANNOT be undone.
+                  </AlertDescription>
+                </Alert>
+              )}
               <Form {...burnForm}>
                 <form onSubmit={burnForm.handleSubmit(onBurn)} className="space-y-4">
                   <FormField

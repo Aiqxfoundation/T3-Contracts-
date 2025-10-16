@@ -226,6 +226,165 @@ export class TronService {
     }
   }
 
+  async estimateDeploymentFee(params: DeployTokenParams): Promise<{
+    energyRequired: number;
+    bandwidthRequired: number;
+    estimatedTrxCost: string;
+    estimatedUsdCost: string;
+  }> {
+    try {
+      // Get current energy/bandwidth pricing from chain parameters
+      const chainParameters = await this.getChainParameters();
+      
+      // Estimate energy and bandwidth for contract deployment
+      // These are typical values for TRC-20 token deployment
+      const energyRequired = 65000; // Average energy for TRC-20 deployment
+      const bandwidthRequired = 350; // Average bandwidth
+      
+      // Energy cost calculation using actual chain parameters
+      const sunPerEnergy = chainParameters.getEnergyFee || 420;
+      const energyCostSun = energyRequired * sunPerEnergy;
+      const energyCostTrx = this.tronWeb.fromSun(energyCostSun);
+      
+      // Bandwidth cost (if no free bandwidth available)
+      const sunPerBandwidth = chainParameters.getTransactionFee || 1000;
+      const bandwidthCostSun = bandwidthRequired * sunPerBandwidth;
+      const bandwidthCostTrx = this.tronWeb.fromSun(bandwidthCostSun);
+      
+      // Add 20% safety margin for mainnet
+      const safetyMargin = this.network === 'mainnet' ? 1.2 : 1.1;
+      const totalTrx = ((parseFloat(energyCostTrx) + parseFloat(bandwidthCostTrx)) * safetyMargin).toFixed(2);
+      
+      // Estimate USD cost (approximate TRX price)
+      const trxUsdPrice = 0.25;
+      const estimatedUsd = (parseFloat(totalTrx) * trxUsdPrice).toFixed(2);
+      
+      return {
+        energyRequired,
+        bandwidthRequired,
+        estimatedTrxCost: totalTrx,
+        estimatedUsdCost: estimatedUsd,
+      };
+    } catch (error: any) {
+      console.error('Error estimating deployment fee:', error);
+      throw new Error(`Failed to estimate deployment fee: ${error.message}`);
+    }
+  }
+
+  async estimateTransferFee(): Promise<{
+    energyRequired: number;
+    bandwidthRequired: number;
+    estimatedTrxCost: string;
+  }> {
+    try {
+      const chainParameters = await this.getChainParameters();
+      
+      // Typical values for TRC-20 token transfer
+      const energyRequired = 14500;
+      const bandwidthRequired = 345;
+      
+      const sunPerEnergy = chainParameters.getEnergyFee || 420;
+      const energyCostSun = energyRequired * sunPerEnergy;
+      const energyCostTrx = this.tronWeb.fromSun(energyCostSun);
+      
+      const sunPerBandwidth = chainParameters.getTransactionFee || 1000;
+      const bandwidthCostSun = bandwidthRequired * sunPerBandwidth;
+      const bandwidthCostTrx = this.tronWeb.fromSun(bandwidthCostSun);
+      
+      const safetyMargin = this.network === 'mainnet' ? 1.2 : 1.1;
+      const totalTrx = ((parseFloat(energyCostTrx) + parseFloat(bandwidthCostTrx)) * safetyMargin).toFixed(2);
+      
+      return {
+        energyRequired,
+        bandwidthRequired,
+        estimatedTrxCost: totalTrx,
+      };
+    } catch (error: any) {
+      console.error('Error estimating transfer fee:', error);
+      throw new Error(`Failed to estimate transfer fee: ${error.message}`);
+    }
+  }
+
+  async estimateMintBurnFee(): Promise<{
+    energyRequired: number;
+    bandwidthRequired: number;
+    estimatedTrxCost: string;
+  }> {
+    try {
+      const chainParameters = await this.getChainParameters();
+      
+      // Typical values for mint/burn operations
+      const energyRequired = 12000;
+      const bandwidthRequired = 345;
+      
+      const sunPerEnergy = chainParameters.getEnergyFee || 420;
+      const energyCostSun = energyRequired * sunPerEnergy;
+      const energyCostTrx = this.tronWeb.fromSun(energyCostSun);
+      
+      const sunPerBandwidth = chainParameters.getTransactionFee || 1000;
+      const bandwidthCostSun = bandwidthRequired * sunPerBandwidth;
+      const bandwidthCostTrx = this.tronWeb.fromSun(bandwidthCostSun);
+      
+      const safetyMargin = this.network === 'mainnet' ? 1.2 : 1.1;
+      const totalTrx = ((parseFloat(energyCostTrx) + parseFloat(bandwidthCostTrx)) * safetyMargin).toFixed(2);
+      
+      return {
+        energyRequired,
+        bandwidthRequired,
+        estimatedTrxCost: totalTrx,
+      };
+    } catch (error: any) {
+      console.error('Error estimating mint/burn fee:', error);
+      throw new Error(`Failed to estimate mint/burn fee: ${error.message}`);
+    }
+  }
+
+  private async getChainParameters(): Promise<any> {
+    try {
+      const params = await this.tronWeb.trx.getChainParameters();
+      const result: any = {};
+      
+      params.forEach((param: any) => {
+        if (param.key === 'getEnergyFee') {
+          result.getEnergyFee = param.value;
+        }
+        if (param.key === 'getTransactionFee') {
+          result.getTransactionFee = param.value;
+        }
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Error getting chain parameters:', error);
+      // Return default values if chain parameter fetch fails
+      return {
+        getEnergyFee: 420,
+        getTransactionFee: 1000,
+      };
+    }
+  }
+
+  async getTokenOwner(tokenAddress: string): Promise<string> {
+    try {
+      const contract = await this.tronWeb.contract().at(tokenAddress);
+      const owner = await contract.owner().call();
+      return this.tronWeb.address.fromHex(owner);
+    } catch (error: any) {
+      console.error('Error getting token owner:', error);
+      throw new Error(`Failed to get token owner: ${error.message}`);
+    }
+  }
+
+  async verifyTokenOwner(tokenAddress: string, address: string): Promise<boolean> {
+    try {
+      const owner = await this.getTokenOwner(tokenAddress);
+      return owner.toLowerCase() === address.toLowerCase();
+    } catch (error) {
+      console.error('Error verifying token owner:', error);
+      return false;
+    }
+  }
+
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }

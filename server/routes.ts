@@ -163,6 +163,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/tokens/estimate-fee", async (req, res) => {
+    try {
+      const parsed = deployTokenSchema.safeParse(req.body);
+      
+      if (!parsed.success) {
+        return res.status(400).json({ 
+          message: "Invalid parameters",
+          errors: parsed.error.errors 
+        });
+      }
+
+      const params = parsed.data;
+      const feeEstimate = await tronService.estimateDeploymentFee(params);
+      
+      res.json(feeEstimate);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.post("/api/tokens/deploy", async (req, res) => {
     try {
       const wallet = await storage.getWallet();
@@ -182,6 +202,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const params = parsed.data;
       const network = await storage.getCurrentNetwork();
+
+      // Check wallet balance before deployment
+      const balance = await tronService.getBalance(wallet.address);
+      const feeEstimate = await tronService.estimateDeploymentFee(params);
+      
+      if (parseFloat(balance) < parseFloat(feeEstimate.estimatedTrxCost)) {
+        return res.status(400).json({ 
+          message: `Insufficient TRX balance. You have ${balance} TRX but need approximately ${feeEstimate.estimatedTrxCost} TRX for deployment.`,
+          balance,
+          required: feeEstimate.estimatedTrxCost
+        });
+      }
 
       // Create pending transaction
       const pendingTx = await storage.createTransaction({
@@ -254,6 +286,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const params = parsed.data;
       const network = await storage.getCurrentNetwork();
 
+      // Check wallet has sufficient TRX for transaction fees
+      const balance = await tronService.getBalance(wallet.address);
+      const feeEstimate = await tronService.estimateTransferFee();
+      
+      if (parseFloat(balance) < parseFloat(feeEstimate.estimatedTrxCost)) {
+        return res.status(400).json({ 
+          message: `Insufficient TRX balance for transaction fees. You have ${balance} TRX but need approximately ${feeEstimate.estimatedTrxCost} TRX.`,
+          balance,
+          required: feeEstimate.estimatedTrxCost
+        });
+      }
+
+      // Check sender has sufficient token balance
+      const tokenBalance = await tronService.getTokenBalance(params.tokenAddress, wallet.address);
+      
+      if (parseFloat(tokenBalance) < parseFloat(params.amount)) {
+        return res.status(400).json({ 
+          message: `Insufficient token balance. You have ${tokenBalance} tokens but trying to transfer ${params.amount} tokens.`,
+          balance: tokenBalance,
+          required: params.amount
+        });
+      }
+
       // Create pending transaction
       const pendingTx = await storage.createTransaction({
         txHash: "pending",
@@ -307,6 +362,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const params = parsed.data;
       const network = await storage.getCurrentNetwork();
+
+      // Verify token ownership before minting
+      const isOwner = await tronService.verifyTokenOwner(params.tokenAddress, wallet.address);
+      
+      if (!isOwner) {
+        return res.status(403).json({ 
+          message: "Only the token owner can mint tokens. You are not the owner of this token.",
+        });
+      }
+
+      // Check wallet has sufficient TRX for transaction fees
+      const balance = await tronService.getBalance(wallet.address);
+      const feeEstimate = await tronService.estimateMintBurnFee();
+      
+      if (parseFloat(balance) < parseFloat(feeEstimate.estimatedTrxCost)) {
+        return res.status(400).json({ 
+          message: `Insufficient TRX balance for transaction fees. You have ${balance} TRX but need approximately ${feeEstimate.estimatedTrxCost} TRX.`,
+          balance,
+          required: feeEstimate.estimatedTrxCost
+        });
+      }
 
       // Create pending transaction
       const pendingTx = await storage.createTransaction({
@@ -368,6 +444,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const params = parsed.data;
       const network = await storage.getCurrentNetwork();
+
+      // Verify token ownership before burning
+      const isOwner = await tronService.verifyTokenOwner(params.tokenAddress, wallet.address);
+      
+      if (!isOwner) {
+        return res.status(403).json({ 
+          message: "Only the token owner can burn tokens. You are not the owner of this token.",
+        });
+      }
+
+      // Check wallet has sufficient TRX for transaction fees
+      const balance = await tronService.getBalance(wallet.address);
+      const feeEstimate = await tronService.estimateMintBurnFee();
+      
+      if (parseFloat(balance) < parseFloat(feeEstimate.estimatedTrxCost)) {
+        return res.status(400).json({ 
+          message: `Insufficient TRX balance for transaction fees. You have ${balance} TRX but need approximately ${feeEstimate.estimatedTrxCost} TRX.`,
+          balance,
+          required: feeEstimate.estimatedTrxCost
+        });
+      }
+
+      // Check owner has sufficient token balance to burn
+      const tokenBalance = await tronService.getTokenBalance(params.tokenAddress, wallet.address);
+      
+      if (parseFloat(tokenBalance) < parseFloat(params.amount)) {
+        return res.status(400).json({ 
+          message: `Insufficient token balance to burn. You have ${tokenBalance} tokens but trying to burn ${params.amount} tokens.`,
+          balance: tokenBalance,
+          required: params.amount
+        });
+      }
 
       // Create pending transaction
       const pendingTx = await storage.createTransaction({

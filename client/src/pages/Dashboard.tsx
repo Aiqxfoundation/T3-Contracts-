@@ -31,6 +31,7 @@ export default function Dashboard({ wallet, network, onCreateWallet, onImportWal
   const { data: balance } = useQuery<{ trxBalance: string }>({
     queryKey: ['/api/wallet/balance', network],
     enabled: !!wallet,
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
   const handleSelectToken = (token: Token) => {

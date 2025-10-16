@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DeployTokenParams, WalletConfig, Network } from "@shared/schema";
 import { TokenDeployForm } from "@/components/TokenDeployForm";
 import { apiRequest } from "@/lib/queryClient";
@@ -16,6 +16,12 @@ export default function Deploy({ wallet, network }: DeployProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+
+  const { data: balance } = useQuery<{ trxBalance: string }>({
+    queryKey: ['/api/wallet/balance', network],
+    enabled: !!wallet,
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
+  });
 
   const deployMutation = useMutation({
     mutationFn: async (params: DeployTokenParams) => {
@@ -70,6 +76,8 @@ export default function Deploy({ wallet, network }: DeployProps) {
       <TokenDeployForm
         onDeploy={(params) => deployMutation.mutate(params)}
         isDeploying={deployMutation.isPending}
+        network={network}
+        trxBalance={balance?.trxBalance}
       />
     </div>
   );
