@@ -31,49 +31,73 @@ export default function Deploy({ wallet, network }: DeployProps) {
       if (response.useTronLink) {
         const tronWeb = (window as any).tronWeb;
         
-        if (!tronWeb || !tronWeb.ready) {
-          throw new Error('TronLink wallet not ready. Please unlock your wallet.');
+        console.log('TronLink deployment requested');
+        console.log('TronWeb available:', !!tronWeb);
+        console.log('TronWeb ready:', tronWeb?.ready);
+        
+        // Check if TronLink is available in iframe
+        if (!tronWeb) {
+          throw new Error(
+            'TronLink not detected in this environment. ' +
+            'TronLink extensions cannot work inside Replit iframe. ' +
+            'Please use "Create New Wallet" or "Import Wallet" for testing in Replit.'
+          );
+        }
+        
+        if (!tronWeb.ready) {
+          throw new Error('TronLink wallet not ready. Please unlock your wallet and refresh the page.');
         }
 
         toast({
           title: "TronLink confirmation required",
-          description: "Please confirm the transaction in TronLink",
+          description: "Please check TronLink popup to confirm the transaction",
         });
 
-        // Deploy contract using TronLink
-        const contract = await tronWeb.contract().new({
-          abi: response.contractABI,
-          bytecode: response.contractBytecode,
-          feeLimit: 1000000000,
-          callValue: 0,
-          userFeePercentage: 100,
-          originEnergyLimit: 10000000,
-          parameters: [
-            params.name,
-            params.symbol,
-            params.decimals,
-            params.initialSupply
-          ]
-        });
+        try {
+          // Deploy contract using TronLink
+          console.log('Deploying contract with TronLink...');
+          const contract = await tronWeb.contract().new({
+            abi: response.contractABI,
+            bytecode: response.contractBytecode,
+            feeLimit: 1000000000,
+            callValue: 0,
+            userFeePercentage: 100,
+            originEnergyLimit: 10000000,
+            parameters: [
+              params.name,
+              params.symbol,
+              params.decimals,
+              params.initialSupply
+            ]
+          });
 
-        const hexAddress = typeof contract.address === 'string' ? contract.address : contract;
-        const contractAddress = tronWeb.address.fromHex(hexAddress);
-        const txHash = contract.transaction?.txID || contract.txID || 'unknown';
+          console.log('Contract deployed:', contract);
+          
+          const hexAddress = typeof contract.address === 'string' ? contract.address : contract;
+          const contractAddress = tronWeb.address.fromHex(hexAddress);
+          const txHash = contract.transaction?.txID || contract.txID || 'unknown';
 
-        // Save deployment to backend
-        const result = await apiRequest("POST", "/api/tokens/save-tronlink-deployment", {
-          txHash,
-          contractAddress,
-          name: params.name,
-          symbol: params.symbol,
-          decimals: params.decimals,
-          totalSupply: params.initialSupply,
-          logoURI: params.logoURI,
-          website: params.website,
-          description: params.description,
-        });
+          console.log('Contract address:', contractAddress);
+          console.log('Transaction hash:', txHash);
 
-        return result;
+          // Save deployment to backend
+          const result = await apiRequest("POST", "/api/tokens/save-tronlink-deployment", {
+            txHash,
+            contractAddress,
+            name: params.name,
+            symbol: params.symbol,
+            decimals: params.decimals,
+            totalSupply: params.initialSupply,
+            logoURI: params.logoURI,
+            website: params.website,
+            description: params.description,
+          });
+
+          return result;
+        } catch (error: any) {
+          console.error('TronLink deployment error:', error);
+          throw new Error(`TronLink deployment failed: ${error.message || 'User rejected or popup blocked'}`);
+        }
       }
 
       return response;
