@@ -122,6 +122,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/wallet/connect-tronlink", async (req, res) => {
+    try {
+      const { address } = req.body;
+      
+      if (!address || typeof address !== 'string') {
+        return res.status(400).json({ message: "Invalid address" });
+      }
+
+      const network = await storage.getCurrentNetwork();
+      
+      const walletData = {
+        address,
+        privateKey: 'tronlink',
+        network,
+      };
+      
+      await storage.setWallet(walletData);
+      currentWallet = walletData;
+      
+      initTronService(network);
+
+      res.json({
+        address: walletData.address,
+        network: walletData.network,
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.post("/api/wallet/disconnect", async (req, res) => {
     try {
       await storage.clearWallet();

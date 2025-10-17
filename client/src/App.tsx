@@ -87,6 +87,27 @@ function Router() {
     },
   });
 
+  const connectTronLinkMutation = useMutation({
+    mutationFn: async (address: string) => {
+      return await apiRequest("POST", "/api/wallet/connect-tronlink", { address });
+    },
+    onSuccess: (data: WalletConfig) => {
+      setWallet(data);
+      queryClientInstance.invalidateQueries({ queryKey: ['/api/wallet'] });
+      toast({
+        title: "TronLink connected",
+        description: "Your TronLink wallet has been connected successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to connect TronLink",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const disconnectWalletMutation = useMutation({
     mutationFn: async () => {
       return await apiRequest("POST", "/api/wallet/disconnect", {});
@@ -131,6 +152,10 @@ function Router() {
     importWalletMutation.mutate(privateKey);
   };
 
+  const handleConnectTronLink = (address: string) => {
+    connectTronLinkMutation.mutate(address);
+  };
+
   const handleDisconnect = () => {
     disconnectWalletMutation.mutate();
   };
@@ -161,6 +186,7 @@ function Router() {
                     network={network}
                     onCreateWallet={handleCreateWallet}
                     onImportWallet={handleImportWallet}
+                    onConnectTronLink={handleConnectTronLink}
                     onDisconnect={handleDisconnect}
                   />
                 </Route>

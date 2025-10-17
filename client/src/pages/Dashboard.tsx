@@ -12,10 +12,11 @@ interface DashboardProps {
   network: Network;
   onCreateWallet: () => void;
   onImportWallet: (privateKey: string) => void;
+  onConnectTronLink?: (address: string) => void;
   onDisconnect: () => void;
 }
 
-export default function Dashboard({ wallet, network, onCreateWallet, onImportWallet, onDisconnect }: DashboardProps) {
+export default function Dashboard({ wallet, network, onCreateWallet, onImportWallet, onConnectTronLink, onDisconnect }: DashboardProps) {
   const [, setLocation] = useLocation();
 
   const { data: tokens = [] } = useQuery<Token[]>({
@@ -56,6 +57,7 @@ export default function Dashboard({ wallet, network, onCreateWallet, onImportWal
           wallet={wallet}
           onCreateWallet={onCreateWallet}
           onImportWallet={onImportWallet}
+          onConnectTronLink={onConnectTronLink}
           onDisconnect={onDisconnect}
           onRefreshBalance={handleRefreshBalance}
           trxBalance={balance?.trxBalance}

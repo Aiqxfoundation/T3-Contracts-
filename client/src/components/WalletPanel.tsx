@@ -13,14 +13,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Wallet, Copy, Check, Eye, EyeOff, Plus, LogOut, RefreshCw } from "lucide-react";
+import { Wallet, Copy, Check, Eye, EyeOff, Plus, LogOut, RefreshCw, Link2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { WalletConfig, Network } from "@shared/schema";
+import { checkTronLink, requestTronLinkConnection } from "@/lib/tronlink";
 
 interface WalletPanelProps {
   wallet: WalletConfig | null;
   onCreateWallet: () => void;
   onImportWallet: (privateKey: string) => void;
+  onConnectTronLink?: (address: string) => void;
   onDisconnect: () => void;
   onRefreshBalance?: () => void;
   trxBalance?: string;
@@ -28,12 +30,14 @@ interface WalletPanelProps {
   isLoadingBalance?: boolean;
 }
 
-export function WalletPanel({ wallet, onCreateWallet, onImportWallet, onDisconnect, onRefreshBalance, trxBalance, network, isLoadingBalance }: WalletPanelProps) {
+export function WalletPanel({ wallet, onCreateWallet, onImportWallet, onConnectTronLink, onDisconnect, onRefreshBalance, trxBalance, network, isLoadingBalance }: WalletPanelProps) {
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [privateKey, setPrivateKey] = useState("");
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isTronLinkConnecting, setIsTronLinkConnecting] = useState(false);
   const { toast } = useToast();
+  const hasTronLink = checkTronLink();
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -59,6 +63,39 @@ export function WalletPanel({ wallet, onCreateWallet, onImportWallet, onDisconne
     }
   };
 
+  const handleConnectTronLink = async () => {
+    if (!hasTronLink) {
+      toast({
+        title: "TronLink not found",
+        description: "Please install TronLink extension from tronlink.org",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsTronLinkConnecting(true);
+    try {
+      const { address } = await requestTronLinkConnection();
+      
+      if (onConnectTronLink) {
+        onConnectTronLink(address);
+      }
+      
+      toast({
+        title: "TronLink connected",
+        description: "Your TronLink wallet has been connected successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Connection failed",
+        description: error.message || "Failed to connect TronLink wallet",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTronLinkConnecting(false);
+    }
+  };
+
   if (!wallet) {
     return (
       <Card>
@@ -70,6 +107,27 @@ export function WalletPanel({ wallet, onCreateWallet, onImportWallet, onDisconne
           <CardDescription>Create or import a wallet to get started</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
+          {hasTronLink && (
+            <>
+              <Button
+                onClick={handleConnectTronLink}
+                className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600"
+                disabled={isTronLinkConnecting}
+                data-testid="button-connect-tronlink"
+              >
+                <Link2 className="w-4 h-4 mr-2" />
+                {isTronLinkConnecting ? "Connecting..." : "Connect TronLink Wallet"}
+              </Button>
+              
+              <div className="relative">
+                <Separator className="my-4" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="bg-background px-2 text-sm text-muted-foreground">or</span>
+                </div>
+              </div>
+            </>
+          )}
+
           <Button
             onClick={onCreateWallet}
             className="w-full"
