@@ -1,5 +1,4 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.5.10;
 
 contract TRC20Token {
     string public name;
@@ -7,180 +6,41 @@ contract TRC20Token {
     uint8 public decimals;
     uint256 public totalSupply;
     
-    string public logoURI;
-    string public website;
-    string public description;
-    
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
     
-    address public owner;
-    bool public paused;
-    
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
-    event Mint(address indexed to, uint256 value);
-    event Burn(address indexed from, uint256 value);
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-    event Paused(address account);
-    event Unpaused(address account);
     
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner can call this function");
-        _;
-    }
-    
-    modifier whenNotPaused() {
-        require(!paused, "Token transfers are paused");
-        _;
-    }
-    
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _initialSupply,
-        string memory _logoURI,
-        string memory _website,
-        string memory _description
-    ) {
+    constructor(string memory _name, string memory _symbol, uint8 _decimals, uint256 _initialSupply) public {
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
-        logoURI = _logoURI;
-        website = _website;
-        description = _description;
-        owner = msg.sender;
-        totalSupply = _initialSupply * 10 ** uint256(_decimals);
+        totalSupply = _initialSupply * (10 ** uint256(_decimals));
         balanceOf[msg.sender] = totalSupply;
-        emit Transfer(address(0), msg.sender, totalSupply);
     }
     
-    function transfer(address _to, uint256 _value) public whenNotPaused returns (bool success) {
-        require(_to != address(0), "Invalid recipient address");
-        require(balanceOf[msg.sender] >= _value, "Insufficient balance");
-        
+    function transfer(address _to, uint256 _value) public returns (bool) {
+        require(balanceOf[msg.sender] >= _value);
         balanceOf[msg.sender] -= _value;
         balanceOf[_to] += _value;
-        
         emit Transfer(msg.sender, _to, _value);
         return true;
     }
     
-    function approve(address _spender, uint256 _value) public returns (bool success) {
-        require(_spender != address(0), "Invalid spender address");
-        // To prevent approval front-running, require allowance to be 0 before setting new value
-        // Or use increaseAllowance/decreaseAllowance functions
-        require(allowance[msg.sender][_spender] == 0 || _value == 0, 
-            "Approve from non-zero to non-zero allowance not allowed. Use increaseAllowance or decreaseAllowance");
+    function approve(address _spender, uint256 _value) public returns (bool) {
         allowance[msg.sender][_spender] = _value;
         emit Approval(msg.sender, _spender, _value);
         return true;
     }
     
-    function increaseAllowance(address _spender, uint256 _addedValue) public returns (bool success) {
-        require(_spender != address(0), "Invalid spender address");
-        allowance[msg.sender][_spender] += _addedValue;
-        emit Approval(msg.sender, _spender, allowance[msg.sender][_spender]);
-        return true;
-    }
-    
-    function decreaseAllowance(address _spender, uint256 _subtractedValue) public returns (bool success) {
-        require(_spender != address(0), "Invalid spender address");
-        require(allowance[msg.sender][_spender] >= _subtractedValue, "Decreased allowance below zero");
-        allowance[msg.sender][_spender] -= _subtractedValue;
-        emit Approval(msg.sender, _spender, allowance[msg.sender][_spender]);
-        return true;
-    }
-    
-    function transferFrom(address _from, address _to, uint256 _value) public whenNotPaused returns (bool success) {
-        require(_to != address(0), "Invalid recipient address");
-        require(balanceOf[_from] >= _value, "Insufficient balance");
-        require(allowance[_from][msg.sender] >= _value, "Allowance exceeded");
-        
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+        require(balanceOf[_from] >= _value);
+        require(allowance[_from][msg.sender] >= _value);
         balanceOf[_from] -= _value;
         balanceOf[_to] += _value;
         allowance[_from][msg.sender] -= _value;
-        
         emit Transfer(_from, _to, _value);
         return true;
-    }
-    
-    function mint(uint256 _amount) public onlyOwner returns (bool success) {
-        uint256 amount = _amount * 10 ** uint256(decimals);
-        totalSupply += amount;
-        balanceOf[owner] += amount;
-        
-        emit Mint(owner, amount);
-        emit Transfer(address(0), owner, amount);
-        return true;
-    }
-    
-    function burn(uint256 _amount) public onlyOwner returns (bool success) {
-        uint256 amount = _amount * 10 ** uint256(decimals);
-        require(balanceOf[owner] >= amount, "Insufficient balance");
-        
-        balanceOf[owner] -= amount;
-        totalSupply -= amount;
-        
-        emit Burn(owner, amount);
-        emit Transfer(owner, address(0), amount);
-        return true;
-    }
-    
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     * CRITICAL: Double-check the new owner address before calling this function.
-     * Once transferred, the previous owner will lose all admin privileges.
-     */
-    function transferOwnership(address newOwner) public onlyOwner {
-        require(newOwner != address(0), "New owner cannot be zero address");
-        require(newOwner != owner, "New owner must be different from current owner");
-        
-        address previousOwner = owner;
-        owner = newOwner;
-        
-        emit OwnershipTransferred(previousOwner, newOwner);
-    }
-    
-    /**
-     * @dev Pauses all token transfers. Can only be called by the owner.
-     * Use this in case of emergency to prevent all transfers.
-     */
-    function pause() public onlyOwner {
-        require(!paused, "Contract is already paused");
-        paused = true;
-        emit Paused(msg.sender);
-    }
-    
-    /**
-     * @dev Unpauses token transfers. Can only be called by the owner.
-     */
-    function unpause() public onlyOwner {
-        require(paused, "Contract is not paused");
-        paused = false;
-        emit Unpaused(msg.sender);
-    }
-    
-    /**
-     * @dev Update token logo URI. Can only be called by the owner.
-     */
-    function setLogoURI(string memory newLogoURI) public onlyOwner {
-        logoURI = newLogoURI;
-    }
-    
-    /**
-     * @dev Update token website. Can only be called by the owner.
-     */
-    function setWebsite(string memory newWebsite) public onlyOwner {
-        website = newWebsite;
-    }
-    
-    /**
-     * @dev Update token description. Can only be called by the owner.
-     */
-    function setDescription(string memory newDescription) public onlyOwner {
-        description = newDescription;
     }
 }
