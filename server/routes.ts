@@ -246,6 +246,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // Check if this is a TronLink wallet
+      const isTronLinkWallet = wallet.privateKey === 'tronlink';
+      
+      if (isTronLinkWallet) {
+        // For TronLink wallets, return contract details for frontend to deploy
+        res.json({
+          useTronLink: true,
+          contractABI: tronService.getContractABI(),
+          contractBytecode: tronService.getContractBytecode(),
+          params: params,
+          network: network
+        });
+        return;
+      }
+
       // Create pending transaction
       const pendingTx = await storage.createTransaction({
         txHash: "pending",
@@ -295,6 +310,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateTransactionStatus(pendingTx.id, "failed", error.message);
         throw error;
       }
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Save token deployed via TronLink
+  app.post("/api/tokens/save-tronlink-deployment", async (req, res) => {
+    try {
+      const wallet = await storage.getWallet();
+      
+      if (!wallet) {
+        return res.status(401).json({ message: "No wallet connected" });
+      }
+
+      const { txHash, contractAddress, name, symbol, decimals, totalSupply, logoURI, website, description } = req.body;
+      
+      if (!txHash || !contractAddress || !name || !symbol || decimals === undefined || !totalSupply) {
+        return res.status(400).json({ message: "Missing required parameters" });
+      }
+
+      const network = await storage.getCurrentNetwork();
+
+      // Create transaction record
+      await storage.createTransaction({
+        txHash,
+        type: "deploy",
+        status: "confirmed",
+        fromAddress: wallet.address,
+        toAddress: null,
+        amount: null,
+        tokenAddress: contractAddress,
+        network,
+        error: null,
+      });
+
+      // Save token to storage
+      const token = await storage.createToken({
+        contractAddress,
+        name,
+        symbol,
+        decimals,
+        totalSupply,
+        deployerAddress: wallet.address,
+        network,
+        logoURI: logoURI || null,
+        website: website || null,
+        description: description || null,
+      });
+
+      res.json({ token, txHash });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

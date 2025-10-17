@@ -25,7 +25,58 @@ export default function Deploy({ wallet, network }: DeployProps) {
 
   const deployMutation = useMutation({
     mutationFn: async (params: DeployTokenParams) => {
-      return await apiRequest("POST", "/api/tokens/deploy", params);
+      const response: any = await apiRequest("POST", "/api/tokens/deploy", params);
+      
+      // Check if TronLink deployment is required
+      if (response.useTronLink) {
+        const tronWeb = (window as any).tronWeb;
+        
+        if (!tronWeb || !tronWeb.ready) {
+          throw new Error('TronLink wallet not ready. Please unlock your wallet.');
+        }
+
+        toast({
+          title: "TronLink confirmation required",
+          description: "Please confirm the transaction in TronLink",
+        });
+
+        // Deploy contract using TronLink
+        const contract = await tronWeb.contract().new({
+          abi: response.contractABI,
+          bytecode: response.contractBytecode,
+          feeLimit: 1000000000,
+          callValue: 0,
+          userFeePercentage: 100,
+          originEnergyLimit: 10000000,
+          parameters: [
+            params.name,
+            params.symbol,
+            params.decimals,
+            params.initialSupply
+          ]
+        });
+
+        const hexAddress = typeof contract.address === 'string' ? contract.address : contract;
+        const contractAddress = tronWeb.address.fromHex(hexAddress);
+        const txHash = contract.transaction?.txID || contract.txID || 'unknown';
+
+        // Save deployment to backend
+        const result = await apiRequest("POST", "/api/tokens/save-tronlink-deployment", {
+          txHash,
+          contractAddress,
+          name: params.name,
+          symbol: params.symbol,
+          decimals: params.decimals,
+          totalSupply: params.initialSupply,
+          logoURI: params.logoURI,
+          website: params.website,
+          description: params.description,
+        });
+
+        return result;
+      }
+
+      return response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/tokens'] });
