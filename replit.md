@@ -64,7 +64,10 @@ This tool provides a comprehensive interface for TRON token development and mana
   - Network-specific data persistence
 
 - **Token Deployment (Production-Ready)**
-  - **Simplified TRC-20 Contract** (Solidity ^0.5.10)
+  - **Modern TRC-20 Contract** (Solidity 0.8.20)
+  - Built-in overflow protection (no SafeMath needed)
+  - Proper address validation
+  - Owner, mint, and burn functionality
   - Standard TRC-20 parameters (name, symbol, decimals, supply)
   - Real-time blockchain fee estimation
   - Balance verification before deployment
@@ -93,7 +96,8 @@ This tool provides a comprehensive interface for TRON token development and mana
 - ✅ **Network configuration** and switching (testnet/mainnet)
 - ✅ **TRX balance queries** with auto-refresh
 - ✅ **Token deployment infrastructure** with fee estimation
-- ✅ **Simplified TRC-20 Contract** (pragma ^0.5.10, production-ready)
+- ✅ **Modern TRC-20 Contract** (Solidity 0.8.20, production-ready)
+- ✅ **Mint/Burn with proper decimals scaling** - Amounts automatically scaled like constructor
 - ✅ **Complete UI/UX** for all token operations
 
 **Deployment Ready (Requires Bytecode Compilation):**
@@ -180,6 +184,26 @@ The application uses in-memory storage by default. Network and wallet state pers
 The application runs on port 5000 with hot-reload enabled:
 - Frontend: Vite dev server
 - Backend: Express with tsx watch mode
+
+## Recent Changes (October 17, 2025)
+
+### Critical Fix: Mint/Burn Decimals Scaling
+- **Problem**: Mint and burn functions didn't scale amounts by decimals, causing incorrect token quantities
+- **Solution**: Updated contract to multiply amounts by `10^decimals` in mint() and burn()
+- **Impact**: Now matches constructor behavior - all amounts are human-readable and automatically scaled
+
+### Contract Upgrade
+- **Upgraded to Solidity 0.8.20** from 0.5.10
+- Added built-in overflow protection (no SafeMath library needed)
+- Proper address validation on all transfers
+- Owner functionality with access control
+- Cleaner, more modern codebase
+
+### Bytecode Update
+- Removed oversized bytecode causing "OUT OF MEMORY" errors
+- Added clear compilation instructions in `server/tronService.ts`
+- User must compile contract in Remix IDE with optimizer enabled (200 runs)
+- See method comments for complete step-by-step guide
 
 ## Future Enhancements
 

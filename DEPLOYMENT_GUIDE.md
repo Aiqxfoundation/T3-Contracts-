@@ -4,13 +4,15 @@ Complete guide for deploying real TRC-20 tokens on TRON testnet and mainnet.
 
 ## ⚠️ IMPORTANT: Bytecode Compilation Required
 
-The app is configured to deploy tokens using the simplified TRC-20 contract, but you **MUST compile the Solidity contract** to get the correct bytecode before deployment will work on testnet/mainnet.
+The app is configured to deploy tokens using the modern TRC-20 contract with mint/burn capabilities, but you **MUST compile the Solidity contract** to get the correct bytecode before deployment will work on testnet/mainnet.
 
 ### Current Status
 
 ✅ **Working:**
 - TronLink wallet connection
-- Simplified TRC-20 contract (pragma ^0.5.10)
+- Modern TRC-20 contract (Solidity 0.8.20)
+- Mint/burn functions with proper decimals scaling
+- Owner access control
 - Network switching (testnet/mainnet)
 - Wallet creation and import
 - TRX balance queries
@@ -25,44 +27,50 @@ The app is configured to deploy tokens using the simplified TRC-20 contract, but
 
 You have **3 options** to compile the TRC-20 contract:
 
-#### Option A: TronIDE (Recommended for TRON)
+#### Option A: Remix IDE (Recommended)
+
+1. Visit [https://remix.ethereum.org/](https://remix.ethereum.org/)
+2. Create a new file called `TRC20Token.sol`
+3. Copy and paste the contract from `server/contracts/TRC20Token.sol`
+4. In Solidity Compiler tab:
+   - Select compiler version: **0.8.20**
+   - Enable Optimization: **Yes**
+   - Set Runs: **200**
+5. Click "Compile TRC20Token.sol"
+6. Click "Compilation Details" button
+7. Scroll down to **BYTECODE** section
+8. Copy the **object** field value (hex string without `0x` prefix)
+9. Update `server/tronService.ts` → `getContractBytecode()` method with the bytecode
+
+**Important:** The optimized bytecode should be under 24KB to avoid TRON's deployment limits.
+
+#### Option B: TronIDE
 
 1. Visit [https://www.tronide.io/](https://www.tronide.io/)
 2. Create a new file and paste the contract from `server/contracts/TRC20Token.sol`
-3. Select compiler version: **0.5.10**
-4. Click "Compile"
-5. Copy the **bytecode** from the compilation result (without `0x` prefix)
-6. Update `server/tronService.ts` → `getContractBytecode()` method with the new bytecode
-
-#### Option B: Remix IDE
-
-1. Visit [https://remix.ethereum.org/](https://remix.ethereum.org/)
-2. Create new Solidity file with contract code
-3. Select Solidity compiler: **0.5.10**
-4. Compile and copy bytecode
-5. Update `server/tronService.ts` → `getContractBytecode()` method
-
-#### Option C: Local Solidity Compiler
-
-If you have solc installed locally:
-
-```bash
-solc --bin --optimize server/contracts/TRC20Token.sol
-```
-
-Copy the output bytecode and update `server/tronService.ts` → `getContractBytecode()` method.
+3. Select compiler version: **0.8.20**
+4. Enable optimizer with 200 runs
+5. Click "Compile"
+6. Copy the **bytecode** from the compilation result (without `0x` prefix)
+7. Update `server/tronService.ts` → `getContractBytecode()` method with the new bytecode
 
 ### 2. Update the Bytecode
 
-Open `server/tronService.ts` and find the `getContractBytecode()` method (around line 540):
+Open `server/tronService.ts` and find the `getContractBytecode()` method (around line 576):
 
 ```typescript
-private getContractBytecode(): string {
-  return "YOUR_COMPILED_BYTECODE_HERE"; // Replace with actual bytecode (no 0x prefix)
+public getContractBytecode(): string {
+  const bytecode = "PASTE_BYTECODE_HERE"; // Replace with compiled bytecode
+  
+  if (bytecode === "PASTE_BYTECODE_HERE") {
+    throw new Error('Contract bytecode not yet compiled...');
+  }
+  
+  return bytecode;
 }
 ```
 
-Replace the placeholder with your compiled bytecode.
+Replace `"PASTE_BYTECODE_HERE"` with your compiled bytecode (without `0x` prefix).
 
 ### 3. Restart the Application
 
@@ -220,25 +228,38 @@ The app provides real-time fee estimates before deployment:
 
 ## 📝 Contract Details
 
-### Simplified TRC-20 Contract
+### Modern TRC-20 Contract
 
 **Location:** `server/contracts/TRC20Token.sol`
 
 **Features:**
-- Standard TRC-20 implementation
-- Solidity version: ^0.5.10
+- Modern TRC-20 implementation with Solidity 0.8.20
+- Built-in overflow protection (no SafeMath needed)
+- Proper address validation on all transfers
+- Owner access control for mint/burn operations
 - Constructor parameters:
   - `_name`: Token name
   - `_symbol`: Token symbol  
   - `_decimals`: Token decimals (usually 6 or 18)
-  - `_initialSupply`: Initial token supply
+  - `_initialSupply`: Initial token supply (human-readable, automatically scaled by decimals)
 
-**Functions:**
+**Standard Functions:**
 - `transfer`: Transfer tokens
 - `approve`: Approve spending
 - `transferFrom`: Transfer from approved address
 - `balanceOf`: Check token balance
 - `allowance`: Check approved amount
+
+**Owner Functions:**
+- `mint`: Mint new tokens (owner only, amounts automatically scaled by decimals)
+- `burn`: Burn tokens (owner only, amounts automatically scaled by decimals)
+- `owner`: View contract owner address
+
+**Security Features:**
+- Solidity 0.8.20 automatic overflow/underflow protection
+- Address validation prevents zero address transfers
+- Owner-only modifier for privileged operations
+- Proper event emissions for all state changes
 
 ## 🐛 Troubleshooting
 
