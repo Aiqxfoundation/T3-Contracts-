@@ -51,7 +51,7 @@ This tool provides a comprehensive interface for TRON token development and mana
 
 ### ✅ Core Functionality
 - **Wallet Management**
-  - **TronLink Wallet Connection** (Browser extension)
+  - **TronLink & TronLink Pro Connection** (Desktop browser extension & Mobile app)
   - Create new wallet
   - Import existing wallet (private key)
   - Display wallet address and TRX balance
@@ -88,7 +88,7 @@ This tool provides a comprehensive interface for TRON token development and mana
 ### ✅ Blockchain Integration Status
 
 **Fully Working:**
-- ✅ **TronLink Wallet Integration** - Connect browser wallet with one click
+- ✅ **TronLink & TronLink Pro Integration** - Connect desktop or mobile wallet with one click
 - ✅ **Wallet creation and import** using TronWeb
 - ✅ **Network configuration** and switching (testnet/mainnet)
 - ✅ **TRX balance queries** with auto-refresh
@@ -108,11 +108,13 @@ The app is **fully configured** to deploy real tokens on testnet/mainnet. You on
 
 ### 🔗 Wallet Connection Methods
 
-1. **TronLink Wallet (Recommended)**
-   - Browser extension integration
+1. **TronLink / TronLink Pro Wallet (Recommended)**
+   - **TronLink:** Browser extension for desktop (Chrome, Firefox, Edge)
+   - **TronLink Pro:** Mobile app for iOS and Android
    - Secure key management
    - One-click connection
    - Automatic network detection
+   - Auto-detects wallet type
 
 2. **Create New Wallet**
    - Generate new TRON wallet

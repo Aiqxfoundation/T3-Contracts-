@@ -76,20 +76,28 @@ The workflow will automatically restart.
 
 ## 🔗 Wallet Connection Options
 
-### Option 1: TronLink Wallet (Recommended)
+### Option 1: TronLink / TronLink Pro Wallet (Recommended)
 
 1. **Install TronLink:**
-   - Download from [https://www.tronlink.org/](https://www.tronlink.org/)
-   - Available for Chrome, Firefox, Edge
+   - **Desktop:** Download browser extension from [https://www.tronlink.org/](https://www.tronlink.org/)
+     - Available for Chrome, Firefox, Edge
+   - **Mobile:** Download TronLink Pro app from App Store or Google Play
+     - iOS: [TronLink Pro on App Store](https://apps.apple.com/app/tronlink-pro/id1453530188)
+     - Android: [TronLink Pro on Google Play](https://play.google.com/store/apps/details?id=com.tronlinkpro.wallet)
 
 2. **Connect TronLink:**
-   - Click "Connect TronLink Wallet" button
-   - Approve connection in TronLink extension
-   - Your wallet address will be connected
+   - **Desktop:** Click "Connect TronLink" button in the app
+   - **Mobile (TronLink Pro):** 
+     - Open TronLink Pro app
+     - Navigate to the app URL in the built-in browser
+     - Click "Connect TronLink Pro" button
+   - Approve connection in your wallet
+   - Your wallet address will be connected automatically
 
 3. **Switch Network:**
-   - Use TronLink extension to switch between testnet (Shasta) and mainnet
+   - Use TronLink/TronLink Pro to switch between testnet (Shasta) and mainnet
    - The app will detect the network automatically
+   - **Note:** Make sure the wallet network matches the app network for smooth operation
 
 ### Option 2: Create New Wallet
 
@@ -157,17 +165,19 @@ The app provides real-time fee estimates before deployment:
 
 ## 🔒 Security Best Practices
 
-### For TronLink Users
+### For TronLink / TronLink Pro Users
 
 ✅ **Safe:**
-- TronLink manages your private key
-- Keys never leave your browser
+- TronLink/TronLink Pro manages your private key
+- Keys never leave your wallet (browser extension or mobile app)
 - App cannot access your private key
+- All transactions require your approval
 
 ⚠️ **Remember:**
-- Always verify transaction details
+- Always verify transaction details before approving
 - Double-check network (testnet vs mainnet)
-- Never share your seed phrase
+- Never share your seed phrase or private key
+- For mobile users: Use the TronLink Pro built-in browser for best compatibility
 
 ### For Manual Wallet Users
 

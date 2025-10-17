@@ -2,15 +2,32 @@ export interface TronLinkWallet {
   ready: boolean;
   address: string | null;
   tronWeb: any;
+  walletType?: 'tronlink' | 'tronlink-pro';
 }
+
+export type WalletType = 'tronlink' | 'tronlink-pro';
 
 export const checkTronLink = (): boolean => {
   return typeof window !== 'undefined' && !!(window as any).tronWeb;
 };
 
+export const getTronLinkType = (): WalletType | null => {
+  if (!checkTronLink()) return null;
+  
+  const tronWeb = (window as any).tronWeb;
+  
+  // TronLink Pro has a specific identifier
+  if (tronWeb.isTronLink === false || tronWeb.walletType === 'TronLinkPro') {
+    return 'tronlink-pro';
+  }
+  
+  // Default TronLink extension
+  return 'tronlink';
+};
+
 export const getTronLinkAddress = async (): Promise<string | null> => {
   if (!checkTronLink()) {
-    throw new Error('TronLink wallet not found. Please install TronLink extension.');
+    throw new Error('TronLink wallet not found. Please install TronLink or TronLink Pro.');
   }
 
   const tronWeb = (window as any).tronWeb;
@@ -26,14 +43,16 @@ export const getTronLinkAddress = async (): Promise<string | null> => {
   return tronWeb.defaultAddress.base58;
 };
 
-export const requestTronLinkConnection = async (): Promise<{ address: string; network: 'mainnet' | 'testnet' }> => {
+export const requestTronLinkConnection = async (): Promise<{ address: string; network: 'mainnet' | 'testnet'; walletType: WalletType }> => {
   if (!checkTronLink()) {
-    throw new Error('TronLink wallet not found. Please install TronLink extension from https://www.tronlink.org/');
+    throw new Error('TronLink wallet not found. Please install TronLink extension or TronLink Pro from https://www.tronlink.org/');
   }
 
   const tronWeb = (window as any).tronWeb;
+  const walletType = getTronLinkType() || 'tronlink';
   
   try {
+    // Request account access
     const res = await tronWeb.request({ method: 'tron_requestAccounts' });
     
     if (!res || res.code !== 200) {
@@ -44,10 +63,10 @@ export const requestTronLinkConnection = async (): Promise<{ address: string; ne
     const fullNode = tronWeb.fullNode.host;
     const network = fullNode.includes('shasta') ? 'testnet' : 'mainnet';
 
-    return { address, network };
+    return { address, network, walletType };
   } catch (error: any) {
     console.error('TronLink connection error:', error);
-    throw new Error(error.message || 'Failed to connect to TronLink');
+    throw new Error(error.message || 'Failed to connect to TronLink/TronLink Pro');
   }
 };
 
