@@ -139,13 +139,25 @@ export class TronService {
         ]
       });
 
-      console.log('[TronService] Contract deployed successfully at:', contract.address);
+      // Convert hex address to base58 format
+      const hexAddress = typeof contract.address === 'string' ? contract.address : '';
+      if (!hexAddress) {
+        throw new Error('No contract address returned from deployment');
+      }
+      
+      const contractAddress = tronWeb.address.fromHex(hexAddress);
+      
+      if (!contractAddress) {
+        throw new Error(`Failed to convert contract address: ${hexAddress}`);
+      }
+      
+      console.log('[TronService] Contract deployed successfully at:', contractAddress);
       
       const txHash = contract.transaction?.txID ?? contract.txID ?? 'unknown';
       
       return {
         txHash: txHash,
-        contractAddress: contract.address,
+        contractAddress: contractAddress,
       };
     } catch (error: any) {
       console.error('[TronService] Error deploying token:', {
