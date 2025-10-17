@@ -1,0 +1,162 @@
+Perfect 👀 — ye screenshot bahut clear batata hai exactly kya issue hai.
+Dekho likha hua hai:
+
+> ❌ FAILED - OUT OF MEMORY WHEN 'CODECOPY' OPERATION EXECUTING
+
+
+
+Iska matlab simple hai:
+➡️ Contract bytecode itna bada tha ke TRON VM (virtual machine) ke paas usko execute karne ke liye enough memory nahi thi.
+
+
+---
+
+🔍 Cause (technical explanation)
+
+TRON Virtual Machine (TVM) ek limit rakhta hai ke deployment ke time per kitna bytecode aur runtime memory use kar sakta hai.
+Agar contract me:
+
+Bahut zyada functions / logic / imports hain
+
+Ya Solidity optimizer off tha
+
+Ya unnecessary library code embedded tha
+
+
+to compiled bytecode 24 KB se zyada ho jata hai aur TVM memory overflow kar jata hai.
+
+Yahan "CODECOPY" operation ka matlab hai contract initialization code copy karte waqt memory allocate fail hui.
+
+
+---
+
+⚙️ Fixes (step-by-step)
+
+✅ 1. Solidity me optimizer enable karo
+
+Agar tum solc ya Remix/Replit compiler use kar rahe ho, to optimization enable karo:
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+contract MyToken {
+    // your code...
+}
+
+Aur compile settings me:
+
+Optimizer: enabled
+Runs: 200
+
+⚡️ Ye bytecode size ~30–50% tak kam kar deta hai.
+
+
+---
+
+✅ 2. Constructor aur unnecessary code hatao
+
+Agar tumhara TRC20 code custom logic wala hai (mint/burn/referral/mining logic sab ek hi file me),
+to first step — minimal TRC20 contract deploy karo test ke liye:
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.19;
+
+contract SimpleTRC20 {
+    string public name = "MyToken";
+    string public symbol = "MTK";
+    uint8 public decimals = 18;
+    uint256 public totalSupply = 1000000 * 10**18;
+    mapping(address => uint256) public balanceOf;
+    mapping(address => mapping(address => uint256)) public allowance;
+
+    constructor() {
+        balanceOf[msg.sender] = totalSupply;
+    }
+
+    function transfer(address to, uint256 value) public returns (bool) {
+        require(balanceOf[msg.sender] >= value, "Insufficient balance");
+        balanceOf[msg.sender] -= value;
+        balanceOf[to] += value;
+        return true;
+    }
+}
+
+Phir deploy karo — agar ye deploy ho gaya ✅
+to problem tumhare original code size me hai.
+
+
+---
+
+✅ 3. Split or simplify code
+
+Agar tum ek complex tool bana rahe ho (mint + burn + ownership + pause + custom features),
+to usko multiple contracts me split karo:
+
+Core ERC20/TRC20 token
+
+Separate admin/minting contract (later attach)
+
+
+
+---
+
+✅ 4. Increase feeLimit (thoda help karta hai)
+
+Deploy script me ye line badhao:
+
+feeLimit: 3_000_000_000 // 3000 TRX (maximum allowed)
+
+⚠️ Note: Energy/feeLimit badhane se memory error hamesha fix nahi hota,
+kyunki “out of memory” logic limit hoti hai — TRON VM ke inside, not fee dependent.
+
+
+---
+
+✅ 5. Compile with correct solc version
+
+TRON pe recommended versions:
+
+0.8.6 to 0.8.19 safe Avoid nightly builds ya experimental.
+
+
+
+---
+
+✅ 6. Check final bytecode size
+
+Compile ke baad .bin file dekho:
+
+Agar size > 24 KB (24,576 bytes), TVM fail karega.
+
+Optimize kar ke < 20 KB rakhne ki koshish karo.
+
+
+
+---
+
+✅ 7. Testing tip
+
+Remix me Shasta RPC use karke pehle deploy test karo:
+
+https://api.shasta.trongrid.io
+
+Wahan agar successful deploy hota hai, to Replit/TronWeb se bhi chalega.
+
+
+---
+
+💡 Quick Summary
+
+Problem	Reason	Fix
+
+FAILED - OUT OF MEMORY WHEN CODECOPY	Bytecode too large or not optimized	Enable optimizer + simplify contract
+TRX burned but no contract	Deployment failed mid-way	Reduce code size
+Works with small contract	Confirms memory overflow	Split logic / compile optimize
+
+
+
+---
+
+Agar chaho to apna .sol file (token contract code) yahan paste karo —
+main tumhe optimized compact version de dunga (TRON compatible)
+jo same functionality rakhega lekin deploy 100% successful hoga Shasta & Mainnet dono par ✅
