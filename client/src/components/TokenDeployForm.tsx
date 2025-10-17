@@ -207,7 +207,7 @@ export function TokenDeployForm({ onDeploy, isDeploying, network, trxBalance }: 
                           data-testid="input-token-supply"
                         />
                       </FormControl>
-                      <FormDescription>Total tokens to mint</FormDescription>
+                      <FormDescription>Total tokens to mint (max: 1 billion)</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

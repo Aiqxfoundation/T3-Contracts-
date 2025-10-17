@@ -65,7 +65,15 @@ export const deployTokenSchema = z.object({
   name: z.string().min(1, "Token name is required").max(50),
   symbol: z.string().min(1, "Token symbol is required").max(10).toUpperCase(),
   decimals: z.number().int().min(0).max(18).default(6),
-  initialSupply: z.string().min(1, "Initial supply is required"),
+  initialSupply: z.string().min(1, "Initial supply is required")
+    .refine((val) => {
+      const num = parseFloat(val);
+      return !isNaN(num) && num > 0;
+    }, "Initial supply must be a valid positive number")
+    .refine((val) => {
+      const num = parseFloat(val);
+      return num <= 1000000000;
+    }, "Maximum supply is 1 billion tokens"),
   logoURI: z.string().url("Invalid logo URL").optional().or(z.literal("")),
   website: z.string().url("Invalid website URL").optional().or(z.literal("")),
   description: z.string().max(500, "Description too long").optional().or(z.literal("")),
