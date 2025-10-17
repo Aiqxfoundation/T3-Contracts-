@@ -104,7 +104,7 @@ export class TronService {
   async deployToken(params: DeployTokenParams, deployerPrivateKey: string): Promise<any> {
     try {
       // Read contract source
-      const contractPath = path.join(__dirname, 'contracts', 'TRC20Token.sol');
+      const contractPath = path.join(import.meta.dirname, 'contracts', 'TRC20Token.sol');
       const contractSource = fs.readFileSync(contractPath, 'utf8');
 
       // Compile contract
