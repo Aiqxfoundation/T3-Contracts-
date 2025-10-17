@@ -107,37 +107,30 @@ export function WalletPanel({ wallet, onCreateWallet, onImportWallet, onConnectT
             Wallet Setup
           </CardTitle>
           <CardDescription>
-            {hasTronLink 
-              ? `Connect your ${walletType === 'tronlink-pro' ? 'TronLink Pro' : 'TronLink'} wallet or create a new one`
-              : 'Create or import a wallet to get started'
-            }
+            Connect your TronLink wallet or create a new one to get started
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {hasTronLink && (
-            <>
-              <Button
-                onClick={handleConnectTronLink}
-                className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600"
-                disabled={isTronLinkConnecting}
-                data-testid="button-connect-tronlink"
-              >
-                <Link2 className="w-4 h-4 mr-2" />
-                {isTronLinkConnecting 
-                  ? "Connecting..." 
-                  : walletType === 'tronlink-pro' 
-                    ? "Connect TronLink Pro" 
-                    : "Connect TronLink"}
-              </Button>
-              
-              <div className="relative">
-                <Separator className="my-4" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="bg-background px-2 text-sm text-muted-foreground">or</span>
-                </div>
-              </div>
-            </>
-          )}
+          <Button
+            onClick={handleConnectTronLink}
+            className="w-full bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600"
+            disabled={isTronLinkConnecting}
+            data-testid="button-connect-tronlink"
+          >
+            <Link2 className="w-4 h-4 mr-2" />
+            {isTronLinkConnecting 
+              ? "Connecting..." 
+              : hasTronLink && walletType === 'tronlink-pro' 
+                ? "Connect TronLink Pro" 
+                : "Connect TronLink"}
+          </Button>
+          
+          <div className="relative">
+            <Separator className="my-4" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="bg-background px-2 text-sm text-muted-foreground">or</span>
+            </div>
+          </div>
 
           <Button
             onClick={onCreateWallet}
